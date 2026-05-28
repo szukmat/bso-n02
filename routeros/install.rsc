@@ -29,8 +29,8 @@
 :local cfgSmtpServer "smtp.gmail.com"
 :local cfgSmtpPort 587
 :local cfgDockerImage "karaskar/bso-n02:latest"
-:local cfgIntervalFast "1h"
-:local cfgIntervalNormal "6h"
+:local cfgIntervalFast "30m"
+:local cfgIntervalNormal "3h"
 
 # ===== INTERAKTYWNA KONFIGURACJA =====
 :put "Konfiguracja interaktywna (Enter = wartosc domyslna):"
@@ -191,8 +191,8 @@
 /system/scheduler/add name=bso-mail-fast on-event=send-report interval=$cfgIntervalFast start-time=00:02:00 comment="BSO wysylka po fast"
 /system/scheduler/add name=bso-scan-normal on-event=do-scan-normal interval=$cfgIntervalNormal start-time=00:30:00 comment="BSO standardowy skan"
 /system/scheduler/add name=bso-mail-normal on-event=send-report interval=$cfgIntervalNormal start-time=00:32:00 comment="BSO wysylka po normal"
-/system/scheduler/add name=bso-scan-full on-event=do-scan-full interval=24h start-time=03:00:00 comment="BSO pelen audyt codziennie"
-/system/scheduler/add name=bso-mail-full on-event=send-report interval=24h start-time=03:05:00 comment="BSO wysylka po full"
+/system/scheduler/add name=bso-scan-full on-event=do-scan-full interval=12h start-time=03:00:00 comment="BSO pelen audyt 2x dziennie"
+/system/scheduler/add name=bso-mail-full on-event=send-report interval=12h start-time=03:05:00 comment="BSO wysylka po full"
 
 :put "  Scheduler: 6 wpisow (fast, normal, full + maile)"
 
