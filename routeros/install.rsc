@@ -183,41 +183,14 @@
 
 :if ([:len [/container/find tag~"bso-n02"]] = 0) do={
     /container/add remote-image=$cfgDockerImage interface=veth-bso root-dir=($cfgStorageMount . "/bso/container/root") mountlists=bso-data envlists=bso-env logging=yes start-on-boot=no
-    
-    # Czekamy az kontener pojawi sie w bazie (najpierw enumeracja)
-    :local appeared false
-    :local tries 0
-    :while ((!$appeared) and ($tries < 12)) do={
-        :delay 5s
-        :set tries ($tries + 1)
-        :if ([:len [/container/find tag~"bso-n02"]] > 0) do={
-            :set appeared true
-        }
-    }
-    
-    :if (!$appeared) do={
-        :put "  UWAGA - kontener nie pojawil sie w bazie po 60s"
-        :put "  Sprawdz: /container print  oraz  /log print where topics~\"container\""
+    :put "  Obraz dodany, oczekiwanie na pobranie i ekstrakcje (2 min)..."
+    :delay 120s
+    :put "  Sprawdzam status..."
+    :local conts [/container/find tag~"bso-n02"]
+    :if ([:len $conts] > 0) do={
+        :put ("  OK - kontener obecny, status: " . [/container/get [:pick $conts 0] status])
     } else={
-        # Czekamy na ukonczenie ekstrakcji (status stopped)
-        :local extracted false
-        :local tries2 0
-        :while ((!$extracted) and ($tries2 < 60)) do={
-            :delay 5s
-            :set tries2 ($tries2 + 1)
-            :local conts [/container/find tag~"bso-n02"]
-            :if ([:len $conts] > 0) do={
-                :local st [/container/get [:pick $conts 0] status]
-                :if ($st = "stopped") do={ :set extracted true }
-            }
-        }
-        
-        :if ($extracted) do={
-            :put "  OK - obraz pobrany i rozpakowany (status: stopped)"
-        } else={
-            :put "  UWAGA - obraz nadal sie rozpakowuje, sprawdz: /container print"
-            :put "         Kontynuuje konfiguracje, sprawdz status pozniej."
-        }
+        :put "  UWAGA - kontener nie pojawil sie, sprawdz /container print"
     }
 } else={
     :put "  Kontener juz istnieje, pomijam pobieranie"
@@ -236,10 +209,10 @@
 # Skrypt: do-scan (uruchamia kontener)
 /system/script/add name=do-scan source=":log info \"[BSO] Uruchamiam skan\"; /container/start [find tag~\"bso-n02\"]; :log info \"[BSO] Kontener wystartowal\""
 
-# Skrypt: do-scan-normal (zmienia profil na normal i woluje do-scan)
+# Skrypt: do-scan-normal (zmienia profil na normal i wywoluje do-scan)
 /system/script/add name=do-scan-normal source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=normal; /system/script/run do-scan"
 
-# Skrypt: do-scan-full (zmienia profil na full i woluje do-scan)
+# Skrypt: do-scan-full (zmienia profil na full i wywoluje do-scan)
 /system/script/add name=do-scan-full source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=full; /system/script/run do-scan"
 
 # Skrypt: send-report (wysylka raportu mailem)
