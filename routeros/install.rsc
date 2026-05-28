@@ -159,7 +159,7 @@
 
 :do {
     :if ([:len [/container/find tag~"bso-n02"]] = 0) do={
-        /container/add remote-image=$cfgDockerImage interface=veth-bso root-dir=($cfgStorageMount . "/bso/container/root") mountlists=bso-data envlists=bso-env logging=yes start-on-boot=no
+        /container/add remote-image=$cfgDockerImage interface=veth-bso root-dir=($cfgStorageMount . "/bso/container/root") mountlists=bso-data envlist=bso-env logging=yes start-on-boot=no
         :put "  Obraz dodany - pobieranie i ekstrakcja trwa w tle (2-5 min)"
         :put "  Gdy zakonczy sie ekstrakcja, kontener bedzie gotowy (status: stopped)"
         :put "  Sprawdz: /container print"
@@ -180,9 +180,12 @@
 /system/script/remove [find name="send-report"]
 /system/scheduler/remove [find name~"^bso-"]
 
-/system/script/add name=do-scan source=":log info \"[BSO] Uruchamiam skan\"; /container/start [find tag~\"bso-n02\"]; :log info \"[BSO] Kontener wystartowal\""
-/system/script/add name=do-scan-normal source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=normal; /system/script/run do-scan"
-/system/script/add name=do-scan-full source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=full; /system/script/run do-scan"
+/system/script/add name=do-scan source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=fast; :log info \"[BSO] Uruchamiam skan FAST\"; /container/start [find tag~\"bso-n02\"]; :log info \"[BSO] Kontener wystartowal\""
+
+/system/script/add name=do-scan-normal source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=normal; :log info \"[BSO] Uruchamiam skan NORMAL\"; /container/start [find tag~\"bso-n02\"]; :log info \"[BSO] Kontener wystartowal\""
+
+/system/script/add name=do-scan-full source="/container/envs/set [find list=bso-env key=SCAN_PROFILE] value=full; :log info \"[BSO] Uruchamiam skan FULL\"; /container/start [find tag~\"bso-n02\"]; :log info \"[BSO] Kontener wystartowal\""
+
 /system/script/add name=send-report source=":log info \"[BSO] Wysylam raport\"; /tool e-mail send to=\"$cfgEmailTo\" subject=\"[BSO N02] Raport skanowania sieci\" body=\"W zalaczniku raport skanowania sieci lokalnej.\" file=\"$cfgStorageMount/bso/data/state/latest_report.txt\"; :log info \"[BSO] Wyslano\""
 
 :put "  Skrypty: do-scan, do-scan-normal, do-scan-full, send-report"
@@ -190,9 +193,9 @@
 /system/scheduler/add name=bso-scan-fast on-event=do-scan interval=$cfgIntervalFast start-time=startup comment="BSO szybki skan"
 /system/scheduler/add name=bso-mail-fast on-event=send-report interval=$cfgIntervalFast start-time=00:02:00 comment="BSO wysylka po fast"
 /system/scheduler/add name=bso-scan-normal on-event=do-scan-normal interval=$cfgIntervalNormal start-time=00:30:00 comment="BSO standardowy skan"
-/system/scheduler/add name=bso-mail-normal on-event=send-report interval=$cfgIntervalNormal start-time=00:32:00 comment="BSO wysylka po normal"
+/system/scheduler/add name=bso-mail-normal on-event=send-report interval=$cfgIntervalNormal start-time=00:34:00 comment="BSO wysylka po normal"
 /system/scheduler/add name=bso-scan-full on-event=do-scan-full interval=12h start-time=03:00:00 comment="BSO pelen audyt 2x dziennie"
-/system/scheduler/add name=bso-mail-full on-event=send-report interval=12h start-time=03:05:00 comment="BSO wysylka po full"
+/system/scheduler/add name=bso-mail-full on-event=send-report interval=12h start-time=03:07:00 comment="BSO wysylka po full"
 
 :put "  Scheduler: 6 wpisow (fast, normal, full + maile)"
 
@@ -216,8 +219,11 @@
 :put "============================================================"
 :put ""
 :put "TEST RECZNY:"
-:put "  /system/script/run do-scan       # skan (czekaj 30s)"
-:put "  /system/script/run send-report   # wyslij raport"
+:put "  /system/script/run do-scan         # fast"
+:put "  /system/script/run do-scan-normal  # normal"
+:put "  /system/script/run do-scan-full    # full"
+:put "  /container/print                   # czekaj az kontener bedzie STOPPED"
+:put "  /system/script/run send-report     # wyslij ostatni gotowy raport"
 :put ""
 :put "STATUS:"
 :put "  /container/print"
